@@ -3,6 +3,7 @@ import os
 import re
 import gzip
 import tarfile
+import shutil
 from pyinotify import WatchManager, Notifier, ProcessEvent, IN_DELETE, IN_CREATE, IN_MODIFY
 from pcap_analysis import PcapHandler
 
@@ -25,7 +26,10 @@ class EventHandler(ProcessEvent):
                 tar_file_name = abs_file_name[:-2]+'tar'
                 open(tar_file_name,'w+').write(gz.read())
                 
-                os.remove(abs_file_name)#delete gz file
+                #os.remove(abs_file_name)#delete gz file
+                bk_dst = os.path.join(event.path,'bk',event.name)
+                print bk_dst
+                shutil.move(abs_file_name,bk_dst)
                 tar = tarfile.open(tar_file_name)
                 names = tar.getnames()#['..pcap']
                 for name in names:
