@@ -1,0 +1,68 @@
+# encoding: UTF-8
+import os
+import re
+import gzip
+import tarfile
+from pyinotify import WatchManager, Notifier, ProcessEvent, IN_DELETE, IN_CREATE, IN_MODIFY
+from pcap_analysis import PcapHandler
+
+class EventHandler(ProcessEvent):
+    def process_IN_CREATE(self, event):
+        print "Create file:%s." %os.path.join(event.path,event.name)
+
+    def process_IN_DELETE(self, event):
+        print "Delete file:%s." %os.path.join(event.path,event.name)
+
+    def process_IN_MODIFY(self, event):
+        abs_file_name = os.path.join(event.path,event.name)
+        #正则判断是不是传来的抓包文件 解包出来的pcap后缀的不处理 也就是说直接上传的pcap包都不会处理
+        #1C887950FC57-1478826408-00012-data.gz
+        reg_pattern = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.gz')
+        if(reg_pattern.match(event.name)):
+            try:
+                gz = gzip.GzipFile(abs_file_name)
+                #to tar
+                tar_file_name = abs_file_name[:-2]+'tar'
+                open(tar_file_name,'w+').write(gz.read())
+                
+                os.remove(abs_file_name)#delete gz file
+                tar = tarfile.open(tar_file_name)
+                names = tar.getnames()#['..pcap']
+                for name in names:
+                    tar.extract(name,event.path)
+                    pcap_file_name = os.path.join(event.path,name)
+                    a = PcapHandler()
+                    data = a.createDataFromPcapfile(pcap_file_name)
+                    sql = a.createSQL(data)
+                    a.wr2db(sql)
+                    os.remove(pcap_file_name)
+                    print 'handled '+pcap_file_name
+                tar.close()
+
+                os.remove(tar_file_name)
+            except:
+                print 'file loading...'
+            
+
+        print "Modify file:%s." %os.path.join(event.path,event.name)
+
+def FsMonitor(path='.'):
+    wm = WatchManager()
+    mask = IN_DELETE | IN_CREATE | IN_MODIFY
+    notifier = Notifier(wm, EventHandler())
+    wm.add_watch(path, mask, auto_add= True, rec=True)
+    print "now starting monitor %s." %path
+
+    while True:
+        try:
+            notifier.process_events()
+            if notifier.check_events():
+                print "check event true."
+                notifier.read_events()
+        except KeyboardInterrupt:
+            print "keyboard Interrupt."
+            notifier.stop()
+            break
+
+if __name__ == "__main__":
+    FsMonitor("/pcap/")
