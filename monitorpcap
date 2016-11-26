@@ -4,8 +4,10 @@ import re
 import gzip
 import tarfile
 import shutil
+import sys
 from pyinotify import WatchManager, Notifier, ProcessEvent, IN_DELETE, IN_CREATE, IN_MODIFY
-from pcap_analysis import PcapHandler
+from pcap_analysis import PcapHandler,w2log
+
 
 class EventHandler(ProcessEvent):
     def process_IN_CREATE(self, event):
@@ -24,11 +26,13 @@ class EventHandler(ProcessEvent):
                 gz = gzip.GzipFile(abs_file_name)
                 #to tar
                 tar_file_name = abs_file_name[:-2]+'tar'
-                open(tar_file_name,'w+').write(gz.read())
+                try:
+                    open(tar_file_name,'w+').write(gz.read())
+                except:
+                    w2log('write tar file:'+str(sys.exc_info()[0]))
                 
                 #os.remove(abs_file_name)#delete gz file
                 bk_dst = os.path.join(event.path,'bk',event.name)
-                print bk_dst
                 shutil.move(abs_file_name,bk_dst)
                 tar = tarfile.open(tar_file_name)
                 names = tar.getnames()#['..pcap']
@@ -37,15 +41,14 @@ class EventHandler(ProcessEvent):
                     pcap_file_name = os.path.join(event.path,name)
                     a = PcapHandler()
                     data = a.createDataFromPcapfile(pcap_file_name)
-                    sql = a.createSQL(data)
-                    a.wr2db(sql)
+                    
                     os.remove(pcap_file_name)
                     print 'handled '+pcap_file_name
                 tar.close()
 
                 os.remove(tar_file_name)
             except:
-                print 'file loading...'
+                w2log('file uploading:'+str(sys.exc_info()[0]))
             
 
         print "Modify file:%s." %os.path.join(event.path,event.name)
@@ -69,4 +72,4 @@ def FsMonitor(path='.'):
             break
 
 if __name__ == "__main__":
-    FsMonitor("/pcap/")
+    FsMonitor("pcap/")
