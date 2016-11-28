@@ -7,7 +7,7 @@ import datetime
 import pyshark
 import sys
 
-def w2log(str):
+def w2log(log_str):
 
 	# print str
 
@@ -15,7 +15,9 @@ def w2log(str):
 
 	try:
 
-		file_obj.write(str+'\n')
+		log_str = log_str + str(time.strftime("%Y%m%d %X",time.localtime()))
+
+		file_obj.write(log_str+'\n')
 
 	except:
 
@@ -110,15 +112,11 @@ class PcapHandler:
 
 				data = all_data[ite]
 
-				w2log('cur_data:'+str(data))
-
 				cur_value = '('
 
 				for item in data:
 
 					cur_value += '"' + str(data[item]) + '",'
-
-					w2log('cur_value:'+str(cur_value))
 
 				cur_value = cur_value[:-1] + '),'#delete last ","
 
@@ -127,8 +125,6 @@ class PcapHandler:
 			if values:
 
 				self.sql = self.sql_header + values[:-1]#delete last ","
-
-				w2log(self.sql)
 
 		else:
 

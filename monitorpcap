@@ -10,10 +10,10 @@ from pcap_analysis import PcapHandler,w2log
 
 class MyEventHandler(pyinotify.ProcessEvent):
     def process_IN_ACCESS(self, event):
-        print "ACCESS event:", event.pathname
+        # print "ACCESS event:", event.pathname
 
     def process_IN_ATTRIB(self, event):
-        print "ATTRIB event:", event.pathname
+        # print "ATTRIB event:", event.pathname
 
     def process_IN_CLOSE_NOWRITE(self, event):
         print "CLOSE_NOWRITE event:", event.pathname
@@ -25,7 +25,7 @@ class MyEventHandler(pyinotify.ProcessEvent):
         print "DELETE event:", event.pathname
 
     def process_IN_MODIFY(self, event):
-        print "MODIFY event:", event.pathname
+        # print "MODIFY event:", event.pathname
 
     def process_IN_OPEN(self, event):
         print "OPEN event:", event.pathname
@@ -86,4 +86,4 @@ def main():
     notifier.loop()
 
 if __name__ == '__main__':
-    main()
+    main()
