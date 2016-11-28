@@ -52,6 +52,18 @@ class MyEventHandler(pyinotify.ProcessEvent):
                     shutil.move(abs_file_name,bk_dst)
                 except:
                     w2log('write tar file:'+str(sys.exc_info()[0]))
+                    if os.path.exists(tar_file_name):
+                        os.remove(tar_file_name)
+                    try:
+                        open(tar_file_name,'wb').write(gz.read())
+                        bk_dst = os.path.join('/pcapbk',event.name)
+                        if os.path.exists(abs_file_name):
+                            shutil.move(abs_file_name,bk_dst)
+                    except:
+                        w2log('write tar file sec error:'+str(sys.exc_info()[0]))
+                        if os.path.exists(tar_file_name):
+                            os.remove(tar_file_name)
+
                 
             except:
                 w2log('failt to gzip file:'+str(sys.exc_info()[0]))
@@ -63,6 +75,7 @@ class MyEventHandler(pyinotify.ProcessEvent):
                 names = tar.getnames()#['abc.pcap','bcd.pca']
                 for name in names:
                     tar.extract(name,event.path)
+                tar.close()
             except:
                 w2log('extra tar file error:'+str(sys.exc_info()[0]))
         elif pcap_reg_pattern.match( event.name) :
