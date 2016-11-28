@@ -18,45 +18,6 @@ class MyEventHandler(pyinotify.ProcessEvent):
     def process_IN_CLOSE_NOWRITE(self, event):
         print "CLOSE_NOWRITE event:", event.pathname
 
-    def process_IN_CLOSE_WRITE(self, event):
-        abs_file_name = event.pathname
-        #正则判断是不是传来的抓包文件 解包出来的pcap后缀的不处理 也就是说直接上传的pcap包都不会处理
-        #1C887950FC57-1478826408-00012-data.gz
-        reg_pattern = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.gz')
-        if reg_pattern.match(event.name):
-            try:
-                gz = gzip.GzipFile(abs_file_name)
-                #to tar
-                tar_file_name = abs_file_name[:-2]+'tar'
-                try:
-                    open(tar_file_name,'w+').write(gz.read())
-                except:
-                    w2log('write tar file:'+str(sys.exc_info()[0]))
-                
-                #os.remove(abs_file_name)#delete gz file
-                bk_dst = os.path.join('/pcapbk',event.name)
-                shutil.move(abs_file_name,bk_dst)
-                try:
-                    tar = tarfile.open(tar_file_name)
-                    names = tar.getnames()#['..pcap']
-                    for name in names:
-                        tar.extract(name,event.path)
-                        pcap_file_name = os.path.join(event.path,name)
-                        a = PcapHandler()
-                        data = a.createDataFromPcapfile(pcap_file_name)
-                        
-                        os.remove(pcap_file_name)
-                        print 'handled '+pcap_file_name
-                    tar.close()
-                except:
-                    w2log('failt to open tar:'+str(tar_file_name))
-                try:
-                    os.remove(tar_file_name)
-                except:
-                    w2log('fail to remove tar:'+str(tar_file_name))
-            except:
-                w2log('file uploading:'+str(sys.exc_info()[0]))
-
     def process_IN_CREATE(self, event):
         print "CREATE event:", event.pathname
 
@@ -68,6 +29,49 @@ class MyEventHandler(pyinotify.ProcessEvent):
 
     def process_IN_OPEN(self, event):
         print "OPEN event:", event.pathname
+
+    def process_IN_CLOSE_WRITE(self, event):
+        w2log('CLOSE WRITE event'+str(event.pathname))
+        abs_file_name = event.pathname
+        #正则判断是不是传来的抓包文件 解包出来的pcap后缀的不处理 也就是说直接上传的pcap包都不会处理
+        #1C887950FC57-1478826408-00012-data.gz
+        gz_reg_pattern = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.gz')
+        tar_reg_pattern  = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.tar')
+        pcap_reg_pattern = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.pcap')
+        if gz_reg_pattern.match(event.name):
+            try:
+                gz = gzip.GzipFile(abs_file_name)
+                #to tar
+                tar_file_name = abs_file_name[:-2]+'tar'
+                try:
+                    open(tar_file_name,'w+').write(gz.read())
+                    bk_dst = os.path.join('/pcapbk',event.name)
+                    shutil.move(abs_file_name,bk_dst)
+                except:
+                    w2log('write tar file:'+str(sys.exc_info()[0]))
+                
+            except:
+                w2log('failt to gzip file:'+str(sys.exc_info()[0]))
+        elif tar_reg_pattern.match( event.name ):
+            w2log('now to handle tar file:'+str(event.name))
+            #tar file 
+            try:
+                tar = tarfile.open( event.pathname )
+                names = tar.getnames()#['abc.pcap','bcd.pca']
+                for name in names:
+                    tar.extract(name,event.path)
+            except:
+                w2log('extra tar file error:'+str(sys.exc_info()[0]))
+        elif pcap_reg_pattern.match( event.name) :
+            w2log('now to handle pcap file:'+str(event.pathname))
+            try:
+                a = PcapHandler()
+                data = a.createDataFromPcapfile(event.pathname)
+                os.remove(event.pathname)
+                tar_file_name = event.pathname[:-4]+'tar'
+                os.remove(tar_file_name)
+            except:
+                w2log('handle pcap file fail:'+str(sys.exc_info()[0]))
 
 def main():
     # watch manager
@@ -82,4 +86,4 @@ def main():
     notifier.loop()
 
 if __name__ == '__main__':
-    main()
+    main()

@@ -88,7 +88,7 @@ class PcapHandler:
 
 			sql = self.createSQL(self.data)
 
-			w2log(sql)
+			# w2log(sql)
 
 			self.wr2db(sql)
 
@@ -144,8 +144,6 @@ class PcapHandler:
 			
 			cursor = conn.cursor()
 
-			print sql
-
 			try:
 
 				w2log('now try to write to db')
@@ -153,6 +151,8 @@ class PcapHandler:
 				cursor.execute(sql)
 				
 				conn.commit()
+
+				w2log('write to db success')
 
 			except:
 
