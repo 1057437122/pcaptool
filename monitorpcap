@@ -10,9 +10,11 @@ from pcap_analysis import PcapHandler,w2log
 
 class MyEventHandler(pyinotify.ProcessEvent):
     def process_IN_ACCESS(self, event):
+        pass
         # print "ACCESS event:", event.pathname
 
     def process_IN_ATTRIB(self, event):
+        pass
         # print "ATTRIB event:", event.pathname
 
     def process_IN_CLOSE_NOWRITE(self, event):
@@ -25,13 +27,14 @@ class MyEventHandler(pyinotify.ProcessEvent):
         print "DELETE event:", event.pathname
 
     def process_IN_MODIFY(self, event):
+        pass
         # print "MODIFY event:", event.pathname
 
     def process_IN_OPEN(self, event):
         print "OPEN event:", event.pathname
 
     def process_IN_CLOSE_WRITE(self, event):
-        w2log('CLOSE WRITE event'+str(event.pathname))
+        print "CLOSE write event",event.pathname
         abs_file_name = event.pathname
         #正则判断是不是传来的抓包文件 解包出来的pcap后缀的不处理 也就是说直接上传的pcap包都不会处理
         #1C887950FC57-1478826408-00012-data.gz
@@ -40,11 +43,11 @@ class MyEventHandler(pyinotify.ProcessEvent):
         pcap_reg_pattern = re.compile(r'\w{12}\-\d{10}\-\d{5}\-data\.pcap')
         if gz_reg_pattern.match(event.name):
             try:
-                gz = gzip.GzipFile(abs_file_name)
+                gz = gzip.GzipFile(mode='rb', fileobj=open(abs_file_name,'rb'))
                 #to tar
                 tar_file_name = abs_file_name[:-2]+'tar'
                 try:
-                    open(tar_file_name,'w+').write(gz.read())
+                    open(tar_file_name,'wb').write(gz.read())
                     bk_dst = os.path.join('/pcapbk',event.name)
                     shutil.move(abs_file_name,bk_dst)
                 except:
