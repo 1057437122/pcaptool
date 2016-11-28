@@ -32,21 +32,26 @@ class EventHandler(ProcessEvent):
                     w2log('write tar file:'+str(sys.exc_info()[0]))
                 
                 #os.remove(abs_file_name)#delete gz file
-                bk_dst = os.path.join(event.path,'bk',event.name)
+                bk_dst = os.path.join('/pcapbk',event.name)
                 shutil.move(abs_file_name,bk_dst)
-                tar = tarfile.open(tar_file_name)
-                names = tar.getnames()#['..pcap']
-                for name in names:
-                    tar.extract(name,event.path)
-                    pcap_file_name = os.path.join(event.path,name)
-                    a = PcapHandler()
-                    data = a.createDataFromPcapfile(pcap_file_name)
-                    
-                    os.remove(pcap_file_name)
-                    print 'handled '+pcap_file_name
-                tar.close()
-
-                os.remove(tar_file_name)
+                try:
+                    tar = tarfile.open(tar_file_name)
+                    names = tar.getnames()#['..pcap']
+                    for name in names:
+                        tar.extract(name,event.path)
+                        pcap_file_name = os.path.join(event.path,name)
+                        a = PcapHandler()
+                        data = a.createDataFromPcapfile(pcap_file_name)
+                        
+                        os.remove(pcap_file_name)
+                        print 'handled '+pcap_file_name
+                    tar.close()
+                except:
+                    w2log('failt to open tar:'+str(tar_file_name))
+                try:
+                    os.remove(tar_file_name)
+                except:
+                    w2log('fail to remove tar:'+str(tar_file_name))
             except:
                 w2log('file uploading:'+str(sys.exc_info()[0]))
             
