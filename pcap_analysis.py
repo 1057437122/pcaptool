@@ -94,9 +94,17 @@ class PcapHandler:
 
 			self.wr2db(sql)
 
-		except:
+		except OSError:
 
-			w2log('load failed:'+str(sys.exc_info()[0]))
+			w2log('OSError:'+str(OSError.errno)+str(OSError.filename) + str(OSError.strerror))
+
+		except NameError:
+
+			w2log('Name Error:'+str(NameError.message))
+
+		except :
+
+			w2log('Other error:'+str(sys.exc_info()[0]))
 
 		return self.data
 
