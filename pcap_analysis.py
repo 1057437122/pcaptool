@@ -94,13 +94,17 @@ class PcapHandler:
 
 			self.wr2db(sql)
 
-		except OSError:
+		except IOError as ioex:
 
-			w2log('OSError:'+str(OSError.errno)+str(OSError.filename) + str(OSError.strerror))
+			w2log('IOError: '+str(ioex.strerror))
 
-		except NameError:
+		except OSError as osex:
 
-			w2log('Name Error:'+str(NameError.message))
+			w2log('OSError: errno'+str(osex.errno)+' filename: '+str(osex.filename) +' des: ' + str(osex.strerror))
+
+		except NameError as nmex:
+
+			w2log('Name Error:'+str(nmex.message) + ' strerr:'+str(nmex.strerror))
 
 		except :
 
